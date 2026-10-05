@@ -111,6 +111,7 @@ try:
     h6 = hmac.HMAC(K_master, hashes.SHA256())
     h6.update(b"session identifier" + hashed_trns)
     session_id = (h6.finalize())[0:8]
+    
     print("Handshake complete")
 except ValueError as err:
     print(f"Caught error: {err}")
