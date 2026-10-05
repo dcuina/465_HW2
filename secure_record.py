@@ -4,7 +4,18 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils, dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from handshake import K_g2n_enc, K_g2n_mac, K_n2g_enc, K_n2g_mac, session_id
+from handshake import perform_handshake
+K_g2n_enc = None
+K_g2n_mac = None
+K_n2g_enc = None 
+K_n2g_mac = None 
+session_id = None
+
+def set_vals(k_g2n, k_n2g, ssid):
+    global K_g2n_enc, K_g2n_mac, K_n2g_enc, K_n2g_mac, session_id
+    (K_g2n_enc, K_g2n_mac) = k_g2n 
+    (K_n2g_enc, K_n2g_mac) = k_n2g
+    session_id = ssid
 
 def seal(keys, session_id, direction, seq_num, msg_type, plaintext):
     if (direction == 0):
@@ -77,18 +88,36 @@ gt_dir = 1
 gateway_send_num = 0
 gateway_exp_num = 0
 
-n2g_rec = seal((K_n2g_enc, K_n2g_mac), session_id, node_dir, node_send_num, msg_type, b"Messaging gateway")
-node_send_num += 1
+#n2g_rec = seal((K_n2g_enc, K_n2g_mac), session_id, node_dir, node_send_num, msg_type, b"Messaging gateway")
+#node_send_num += 1
 
-g2n_rec = seal((K_g2n_enc, K_g2n_mac), session_id, gt_dir, gateway_send_num, msg_type, b"Messaging node")
-gateway_send_num += 1
+#g2n_rec = seal((K_g2n_enc, K_g2n_mac), session_id, gt_dir, gateway_send_num, msg_type, b"Messaging node")
+#gateway_send_num += 1
 
-plain_from_node = open_record(n2g_rec, (K_n2g_enc, K_n2g_mac), session_id, node_dir, gateway_exp_num)
-gateway_exp_num += 1
+#plain_from_node = open_record(n2g_rec, (K_n2g_enc, K_n2g_mac), session_id, node_dir, gateway_exp_num)
+#gateway_exp_num += 1
 
-print(plain_from_node)
+#print(plain_from_node)
 
-plain_from_gt = open_record(g2n_rec, (K_g2n_enc, K_g2n_mac), session_id, gt_dir, node_exp_num)
-node_exp_num += 1
+#plain_from_gt = open_record(g2n_rec, (K_g2n_enc, K_g2n_mac), session_id, gt_dir, node_exp_num)
+#node_exp_num += 1
 
-print(plain_from_gt)
+#print(plain_from_gt) 
+
+if __name__ == "__main__":
+    (K_g2n_enc, K_g2n_mac, K_n2g_enc, K_n2g_mac, session_id) = perform_handshake()
+    n2g_rec = seal((K_n2g_enc, K_n2g_mac), session_id, node_dir, node_send_num, msg_type, b"Messaging gateway")
+    node_send_num += 1
+
+    g2n_rec = seal((K_g2n_enc, K_g2n_mac), session_id, gt_dir, gateway_send_num, msg_type, b"Messaging node")
+    gateway_send_num += 1
+
+    plain_from_node = open_record(n2g_rec, (K_n2g_enc, K_n2g_mac), session_id, node_dir, gateway_exp_num)
+    gateway_exp_num += 1
+
+    print(plain_from_node)
+
+    plain_from_gt = open_record(g2n_rec, (K_g2n_enc, K_g2n_mac), session_id, gt_dir, node_exp_num)
+    node_exp_num += 1
+
+    print(plain_from_gt)
