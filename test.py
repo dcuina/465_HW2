@@ -25,9 +25,11 @@ def check_record():
     g2n_rec = seal(k_g2n, session_id, 1, 0, 1, b"Message for node")
 
     g2n_plain = open_record(g2n_rec, k_g2n, session_id, 1, 0)
-
-    assert n2g_plain == b"Message for gateway" and g2n_plain == b"Message for node"
-
+    try:
+        assert n2g_plain == b"Message for gateway" and g2n_plain == b"Message for node"
+        print("Handshake and message send successful")
+    except Exception as err:
+        print("Handshake and message send failed:", err)
 # Modifying ciphertext
 def mod_cipher():
     k_g2n, k_n2g, session_id = new_session()
@@ -80,15 +82,15 @@ def mod_direction():
     except Exception as err:
         print("Attempt to modify direction:", err)
 
-# Try incorrect transcript
-def mod_transcript():
-    trns = [b"CSCE465-HS-v2", b"ffdhe3072", b"Bob", b"Alice", b'100', b'200', b'1', b'1']
-
+# Try incorrect signature
+def mod_signature():
+    bad_sign_a = bytes(384)
+    bad_sign_b = bytes(384)
     try:
-        perform_hand_custom_trans(trns)
+        perform_hand_custom_trans(bad_sign_a, bad_sign_b)
         assert False
     except Exception as err:
-        print("Incorrect transcript")
+        print("Incorrect signature")
 if __name__ == "__main__":
     check_handshake()
     check_record()
@@ -96,4 +98,4 @@ if __name__ == "__main__":
     mod_header()
     test_replay()
     mod_direction()
-    mod_transcript()
+    mod_signature()

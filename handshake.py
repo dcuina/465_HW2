@@ -49,7 +49,7 @@ def trns_len_check(e_t):
 with open("ffdhe3072.pem", "rb") as f:
     parameters = serialization.load_pem_parameters(f.read())
 
-def perform_hand_custom_trans(trns):
+def perform_hand_custom_trans(bad_sign_a, bad_sign_b):
     private_a = parameters.generate_private_key()
     public_a = private_a.public_key()
 
@@ -64,7 +64,7 @@ def perform_hand_custom_trans(trns):
     nonce_a = os.urandom(16)
     nonce_b = os.urandom(16)
 
-    transcript = trns
+    transcript = [b"CSCE465-HS-v2", b"ffdhe3072", b"Alice", b"Bob", public_a.public_numbers().y.to_bytes(384, "big"), public_b.public_numbers().y.to_bytes(384, "big"), nonce_a, nonce_b] 
 
     encoded_transcript = b"".join(len(t).to_bytes(4, "big") + t for t in transcript)
 
@@ -82,10 +82,10 @@ def perform_hand_custom_trans(trns):
         sign_a = signing_key_a.sign(b"node" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
 
         sign_b = signing_key_b.sign(b"gateway" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
+        
+        verify_key_a.verify(bad_sign_a, b"node" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
 
-        verify_key_a.verify(sign_a, b"node" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
-
-        verify_key_b.verify(sign_b, b"gateway" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
+        verify_key_b.verify(bad_sign_b, b"gateway" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
 
         Z = shared_a
         h = hashes.Hash(hashes.SHA256())
@@ -149,7 +149,7 @@ def perform_handshake():
         hashed_trns = ht.finalize()
 
         sign_a = signing_key_a.sign(b"node" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
-
+        
         sign_b = signing_key_b.sign(b"gateway" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
 
         verify_key_a.verify(sign_a, b"node" + hashed_trns, padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
