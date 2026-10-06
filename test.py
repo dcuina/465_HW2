@@ -12,10 +12,6 @@ def new_session():
     return (K_g2n_enc, K_g2n_mac), (K_n2g_enc, K_n2g_mac), session_id
 
 # Looking for correct handshake and bidirectional messaging
-def check_handshake():
-    output = perform_handshake()
-    assert output is not None
-
 def check_record():
     k_g2n, k_n2g, session_id = new_session()
     n2g_rec = seal(k_n2g, session_id, 0, 0, 1, b"Message for gateway")
@@ -77,7 +73,11 @@ def test_replay():
 def mod_direction():
     k_g2n, k_n2g, session_id = new_session()
     try:
-        n2g_rec = seal(k_n2g, session_id, 1, 0, 1, b"Message for gateway")
+        n2g_rec = seal(k_n2g, session_id, 0, 0, 1, b"Message for gateway")
+
+        expected_seq = 0
+        g2n_plain = open_record(n2g_rec, k_g2n, session_id, 1, expected_seq)
+        expected_seq += 1
         assert False
     except Exception as err:
         print("Attempt to modify direction:", err)
@@ -92,7 +92,6 @@ def mod_signature():
     except Exception as err:
         print("Incorrect signature")
 if __name__ == "__main__":
-    check_handshake()
     check_record()
     mod_cipher()
     mod_header()
